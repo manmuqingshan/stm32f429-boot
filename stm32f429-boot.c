@@ -9,6 +9,12 @@
 #include "xprintf.h"
 #include "memtester.h"
 
+#if defined(USE_IS42S16320F)
+	#define SDRAM_SIZE (64ul*1024ul*1024ul)
+#else
+	#define SDRAM_SIZE (8ul*1024ul*1024ul)
+#endif
+
 #define CONFIG_HSE_HZ	8000000
 #define CONFIG_PLL_M	8
 #define CONFIG_PLL_N	360
@@ -193,10 +199,10 @@ int main(void)
 	gpio_set_fmc(gpio_base, 'F', 13);
 	gpio_set_fmc(gpio_base, 'F', 14);
 	gpio_set_fmc(gpio_base, 'F', 15);
-	/* PG0~PG1 A10~A11 */
+	/* PG0~PG1 A10~A11 PG2~A12 */
 	gpio_set_fmc(gpio_base, 'G', 0);
 	gpio_set_fmc(gpio_base, 'G', 1);
-
+	gpio_set_fmc(gpio_base, 'G', 2);
 	/* 数据线 */
 	/* PD14~15 PD0~1 AF2 */
 	gpio_set_fmc(gpio_base, 'D', 14);
@@ -283,17 +289,17 @@ int main(void)
 	uint32_t ts0;
 	uint32_t ts1;
 	volatile uint32_t* src=(uint32_t*)0x90000000;
-	volatile uint32_t* dst=(uint32_t*)(0x90000000+4*1024ul*1024ul);
+	volatile uint32_t* dst=(uint32_t*)(0x90000000+SDRAM_SIZE/2);
 	ts0 = get_ticks();
-	for(uint32_t i=0;i<1*1024*1024ul;i++)
+	for(uint32_t i=0;i<SDRAM_SIZE/8;i++)
 	{
 		*dst++ = *src++;
 	}
 	ts1 = get_ticks();
-	xprintf("copy %dKB/S\r\n",4*1024ul*1000ul/(ts1-ts0));
+	xprintf("copy %dKB/S\r\n",(SDRAM_SIZE/2048)*1000ul/(ts1-ts0));
 	#endif
 
-	if(0 == memtester_main((ulv*)0x90000000, 0x01, 8*1024*1024ul, 1)){
+	if(0 == memtester_main((ulv*)0x90000000, 0x01, SDRAM_SIZE, 1)){
 		xprintf("sdram test ok!\r\n");
 	}else{
 		xprintf("sdram test err!\r\n");

@@ -258,10 +258,15 @@ void sdram_init(void){
 
 	sdram_get_cr(SDRAM_BANK2, &cr2);
 	cr2.cas = 3;
-	cr2.mwid= SDRAM_BUS_WIDTH_16;   /* 4x(2^12)x(2^8)x2B = 8MBMB */
-	cr2.nb = SDRAM_BANK_4;     
-	cr2.nc = SDRAM_COLUMN_BITS_8;
+	cr2.mwid= SDRAM_BUS_WIDTH_16;   
+	cr2.nb = SDRAM_BANK_4;    
+#if defined(USE_IS42S16320F)
+	cr2.nc = SDRAM_COLUMN_BITS_10;   /* 4x(2^13)x(2^10)x2B = 64MB */
+	cr2.nr = SDRAM_ROW_BITS_13;
+#else  
+	cr2.nc = SDRAM_COLUMN_BITS_8;  /* 4x(2^12)x(2^8)x2B = 8MB */
 	cr2.nr = SDRAM_ROW_BITS_12;
+#endif
 	cr2.rburst = 1;
 	cr2.rpipe = 0;  /* rpipe和sdclk 对于BANK2是只读的 由BANK1配置 */
 	cr2.sdclk = 0;  
@@ -272,14 +277,14 @@ void sdram_init(void){
     tr1.trcd = 0;  
     tr1.trp = 1;   
     tr1.twr = 0;   
-    tr1.trc = 6;    
+    tr1.trc = 5;    
     tr1.tras = 0;   
     tr1.txsr = 0;  
     tr1.tmrd = 0;
 	sdram_set_tr(SDRAM_BANK1, &tr1);
 
 	sdram_get_tr(SDRAM_BANK2, &tr2);
-    tr2.trcd = 0;  
+    tr2.trcd = 1;  
     tr2.trp = 0;   
     tr2.twr = 1;   
     tr2.trc = 0;    
@@ -306,7 +311,11 @@ void sdram_init(void){
 	sdram_set_mode(SDRAM_BANK2, SDRAM_MODE_LMR, 0, 0x230);
 
 	/* 设置刷新率 */
+#if defined(USE_IS42S16320F)
+	sdram_set_rtr(0, 1386/2, 0);
+#else
 	sdram_set_rtr(0, 1386, 0);
+#endif
 	sdram_wait_busy();
 
 	/* swap bank地址 */
