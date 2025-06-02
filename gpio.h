@@ -1,6 +1,8 @@
 #ifndef _GPIO_H
 #define _GPIO_H
 
+#include <stdint.h>
+
 #define GPIOx_MODER_MODERy_INPUT	0x0UL
 #define GPIOx_MODER_MODERy_GPOUTPUT	0x1UL
 #define GPIOx_MODER_MODERy_ALTFUNC	0x2UL
@@ -25,5 +27,6 @@ void gpio_set_alt(void *base, char bank, uint8_t port, uint8_t otype, uint8_t os
 void gpio_set_fmc(void *base, char bank, uint8_t port);
 void gpio_set_qspi(void *base, char bank, uint8_t port, uint8_t altfunc, uint8_t pupd);
 void gpio_set_usart(void *base, char bank, uint8_t port, uint8_t altfunc);
-
+void gpio_write(void *base, char bank, uint8_t port, uint8_t val);
+uint8_t gpio_read(void *base, char bank, uint8_t port);
 #endif /* _GPIO_H */

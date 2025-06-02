@@ -15,15 +15,9 @@
 #define __version__ "4.6.0"
 
 #include <stdint.h>
+#include <string.h>
 
 #include "memtester.h"
-
-void memset(void* dst, uint8_t val, uint32_t len){
-    uint8_t* p=dst;
-    for(int i=0;i<len;i++){
-        p[i]=val;
-    }
-}
 
 extern unsigned tick(void);
 static unsigned next = 1;

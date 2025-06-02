@@ -17,7 +17,7 @@
 / by use of this software.
 /
 /-------------------------------------------------------------------------*/
-
+#include "string.h"
 #include "xprintf.h"
 
 #define SZB_OUTPUT	32
@@ -27,17 +27,6 @@
 #include <stdarg.h>
 void (*xfunc_output)(int);	/* Pointer to the default output device */
 static char *strptr;		/* Pointer to the output memory (used by xsprintf) */
-
-unsigned int strlen(char* str){
-	//const char* s = str;
-	//while(*str++);
-	//return str - s - 1;
-	unsigned int i=0;
-	while(*str++){
-		i++;
-	}
-	return i;
-}
 
 #if XF_USE_FP
 /*----------------------------------------------*/
