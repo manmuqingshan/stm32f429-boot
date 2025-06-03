@@ -34,7 +34,7 @@ typedef enum
     LOAD_SECTION_FLAG_CRC16 = 1, /**< CRC16校验 */
     LOAD_SECTION_FLAG_CRC32 = 2, /**< CRC32校验 */
 
-    LOAD_SECTION_FLAG_NEEDLOAD = 16, /**< 表示是否需要加载 */
+    LOAD_SECTION_FLAG_NEEDLOAD = (1u<<16), /**< 表示是否需要加载 */
 } load_section_flag_e;
 
 /**
@@ -50,7 +50,7 @@ typedef struct
     uint32_t lma;             /**< 加载的源地址,加载地址,即在存储中的地址       */
     uint32_t len;             /**< 段的有效数据长度,字节数        */
     uint32_t check;           /**< 段的有效数据对应的校验信       */
-} load_section_info_e;
+} load_section_info_st;
 
 /**
  * \struct load_head_st
@@ -64,8 +64,8 @@ typedef struct
     uint8_t  sectinos;        /**< 后面的section_info个数        */
     uint32_t len;             /**< 用于表示HEAD的长度,包括整个区域 */
     uint32_t check;           /**< 用于表示HEAD的校验信息,如果flag的bit0为1 */
-    /* 后面就是sectinos个load_section_info_e */
-    load_section_info_e section_info[0];
+    /* 后面就是sectinos个load_section_info_st */
+    load_section_info_st section_info[0];
 }load_head_st;
 
 typedef uint32_t (*load_mem_write_pf)(uint8_t* buffer, uint32_t addr, uint32_t len);
@@ -79,11 +79,11 @@ typedef uint32_t (*load_mem_read_pf)(uint8_t* buffer, uint32_t addr, uint32_t le
  */
 void load_mem_itf_set(load_mem_write_pf write_itf, load_mem_write_pf read_itf);
 
-void load_buffer2sectioninfo(uint8_t* buffer, load_section_info_e* section_info);
-void load_sectioninfo2buffer(load_section_info_e* section_info, uint8_t* buffer);
+void load_buffer2sectioninfo(uint8_t* buffer, load_section_info_st* section_info);
+void load_sectioninfo2buffer(load_section_info_st* section_info, uint8_t* buffer);
 void load_buffer2hdr(uint8_t* buffer, load_head_st* hdr);
 void load_hdr2buffer(load_head_st* hdr, uint8_t* buffer);
-int load_one_section(load_section_info_e* section_info);
+int load_one_section(load_section_info_st* section_info);
 int load_load_sections(void);
 void load_boot(void);
 

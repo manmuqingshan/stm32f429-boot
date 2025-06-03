@@ -232,8 +232,15 @@ static int user_main(void)
 	asm volatile ("cpsid i");
 	systick_deinit();  /* 关闭中断等,避免内核启动时初始化定时器时马上产生中断导致异常 */
 
+	/* SPIFLASH boot */
+	load_mem_itf_set(flash_itf_write,flash_itf_read);
 	load_load_sections();
 	load_boot();  /* 此时如果有有效dtb和kernel加载则直接启动 */
+
+	/* @todo 其他boot */
+	//load_mem_itf_set(xxx_write,xxx_read);
+	//load_load_sections();
+	//load_boot(); 
 
 	/* 如果没有dtb和kernel加载则按照默认地址启动 */
 	start_kernel(DTB_ADDR, KERNEL_ADDR);

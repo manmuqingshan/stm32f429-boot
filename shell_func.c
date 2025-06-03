@@ -9,7 +9,7 @@
 #include "uart.h"
 #include "clock.h"
 #include "xmodem.h"
-
+#include "start_kernel.h"
 
 static void helpfunc(uint8_t* param);
 
@@ -22,6 +22,8 @@ static void printflashfunc(uint8_t* param);
 static void writeflashfunc(uint8_t* param);
 static void rxspiflashfunc(uint8_t* param);
 static void sxspiflashfunc(uint8_t* param);
+
+static void bootfunc(uint8_t* param);
 
 /**
  * 最后一行必须为0,用于结束判断
@@ -39,6 +41,8 @@ const shell_cmd_cfg g_shell_cmd_list_ast[ ] =
   { (uint8_t*)"writeflash",   writeflashfunc,   (uint8_t*)"writeflash addr[hex] hexstr"}, 
   { (uint8_t*)"rxspiflash",   rxspiflashfunc,   (uint8_t*)"rxspiflash addr[hex] len"}, 
   { (uint8_t*)"sxspiflash",   sxspiflashfunc,   (uint8_t*)"sxspiflash addr[hex] len"}, 
+
+  { (uint8_t*)"boot",         bootfunc,         (uint8_t*)"boot dtbaddr[hex] kernel[hex]"}, 
 
   { (uint8_t*)0,		          0 ,               0},
 };
@@ -684,3 +688,30 @@ static void sxspiflashfunc(uint8_t* param)
     xprintf("res:%d\r\n",res);
   }
 }
+
+static void bootfunc(uint8_t* param)
+{
+  uint32_t dtbaddr;
+  uint32_t kerneladdr;
+  #if 0
+  if(2 == sscanf((const char*)param, "%*s %lx %lx", &dtbaddr, &kerneladdr))
+  #else
+  char* p =(char*)param;
+  while(1){  /* 跳过%*s部分 */
+    if((*p > 'z') || (*p < 'a')){
+      break;
+    }else{
+      p++;
+    }
+  }
+  long tmp;
+  xatoi(&p, &tmp);
+  dtbaddr = tmp;
+  xatoi(&p, &tmp);
+  kerneladdr = tmp;
+  #endif
+  {
+    start_kernel(dtbaddr, kerneladdr);
+  }
+}
+

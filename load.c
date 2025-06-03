@@ -15,7 +15,7 @@ void load_mem_itf_set(load_mem_write_pf write_itf, load_mem_write_pf read_itf){
     s_load_mem_read = read_itf;
 }
 
-void load_buffer2sectioninfo(uint8_t* buffer, load_section_info_e* section_info){
+void load_buffer2sectioninfo(uint8_t* buffer, load_section_info_st* section_info){
     section_info ->type = buffer[0];
     section_info ->subtype = buffer[1];
     section_info ->flag = buffer[2];
@@ -25,7 +25,7 @@ void load_buffer2sectioninfo(uint8_t* buffer, load_section_info_e* section_info)
     section_info ->check = (uint32_t)buffer[15] | ((uint32_t)buffer[16]<<8) | ((uint32_t)buffer[17]<<16) |  ((uint32_t)buffer[18]<<24);
 }
 
-void load_sectioninfo2buffer(load_section_info_e* section_info, uint8_t* buffer){
+void load_sectioninfo2buffer(load_section_info_st* section_info, uint8_t* buffer){
     buffer[0] = section_info ->type;
     buffer[1] = section_info ->subtype;
     buffer[2] = section_info ->flag; 
@@ -79,7 +79,7 @@ void load_hdr2buffer(load_head_st* hdr, uint8_t* buffer){
     hdr->check = (uint32_t)buffer[12] | ((uint32_t)buffer[13]<<8) | ((uint32_t)buffer[14]<<16) |  ((uint32_t)buffer[15]<<24);
 }
 
-int load_one_section(load_section_info_e* section_info){
+int load_one_section(load_section_info_st* section_info){
     uint8_t* p_dst;
     if(section_info->flag & LOAD_SECTION_FLAG_NEEDLOAD){
         /* 加载 */
@@ -106,7 +106,7 @@ int load_one_section(load_section_info_e* section_info){
 
 int load_load_sections(void){
     load_head_st hdr;
-    load_section_info_e info;
+    load_section_info_st info;
     if((s_load_mem_write == 0) || (s_load_mem_read == 0)){
         return -1;
     }
