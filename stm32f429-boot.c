@@ -93,7 +93,7 @@ static int user_main(void)
 
 	gpio_set_usart(gpio_base, 'A', 9, 7);
 	gpio_set_usart(gpio_base, 'A', 10, 7);
-	uart_init(1, 115200);
+	uart_init(1, 1000000);
 
 	systick_init();
 	asm volatile ("cpsie i");
@@ -221,7 +221,7 @@ static int user_main(void)
 	#endif
 	
 	flash_itf_init();
-	spiflash_test();
+	//spiflash_test();
 	
 	if(wait_key(3)){
 		shell_set_itf(shell_read, shell_write, (shell_cmd_cfg*)g_shell_cmd_list_ast, 1);

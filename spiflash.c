@@ -126,7 +126,7 @@ uint32_t flash_read(flash_dev_st* dev, uint8_t* buffer, uint32_t addr, uint32_t 
     cmd[3] = (uint8_t)(addr >> 0  & 0xFF);
 	dev->spi_trans(cmd, 0, 4, 0);
 	dev->spi_trans(0, buffer, len, 1);
-	return 0;
+	return len;
 }
 
 
@@ -165,13 +165,14 @@ uint32_t flash_write(flash_dev_st* dev, uint8_t* buffer, uint32_t addr, uint32_t
 	/* head */
 	if(sec_head > 0)
     {
-		flash_read(dev,dev->buffer, start_addr, dev->sector_size); 
+		//flash_read(dev,dev->buffer, start_addr, dev->sector_size); 
+		flash_read(dev,dev->buffer+sec_head, start_addr+sec_head, dev->sector_size-sec_head); 
 		fill =( len > (dev->sector_size-sec_head)) ? (dev->sector_size-sec_head) : len;
-		memcpy(dev->buffer+sec_head,buffer,len);
+		memcpy(dev->buffer+sec_head,buffer,fill);
 		flash_erase_sector(dev,start_addr);
         for (uint32_t j=0; j<16; j++) {
 			flash_pageprogram(dev,dev->buffer + (j<<dev->page_bits),start_addr + (j<<dev->page_bits), dev->page_size);  
-    }
+    	}
 		buffer += fill;
 		start_addr += dev->sector_size;
 	}

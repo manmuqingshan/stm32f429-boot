@@ -9,6 +9,7 @@ extern "C" {
 
 #define LOAD_MEM_ADDR 0
 #define LOAD_HDR_LEN  16
+#define LOAD_SECTION_INFO_LEN 19
 #define LOAD_HDR_INFO_MAX_LEN  512
 
 /**
@@ -34,7 +35,7 @@ typedef enum
     LOAD_SECTION_FLAG_CRC16 = 1, /**< CRC16校验 */
     LOAD_SECTION_FLAG_CRC32 = 2, /**< CRC32校验 */
 
-    LOAD_SECTION_FLAG_NEEDLOAD = (1u<<16), /**< 表示是否需要加载 */
+    LOAD_SECTION_FLAG_NEEDLOAD = (1u<<4), /**< 表示是否需要加载 */
 } load_section_flag_e;
 
 /**

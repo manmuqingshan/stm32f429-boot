@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include "load.h"
 #include "start_kernel.h"
+#include "xprintf.h"
 
 static load_mem_write_pf s_load_mem_write = 0;
 static load_mem_read_pf s_load_mem_read = 0;
@@ -53,17 +54,11 @@ void load_buffer2hdr(uint8_t* buffer, load_head_st* hdr){
     hdr->magic[2] = buffer[2];
     hdr->magic[3] = buffer[3];
     hdr->magic[4] = buffer[4];
-    hdr->version = buffer[6];
-    hdr->flag = buffer[7];
-    hdr->sectinos = buffer[8];
-    buffer[9] = hdr->len & 0xFF;
-    buffer[10] = (hdr->len >> 8) & 0xFF;
-    buffer[11] = (hdr->len >> 16) & 0xFF;
-    buffer[12] = (hdr->len >> 24) & 0xFF;
-    buffer[13] = hdr->check & 0xFF;
-    buffer[14] = (hdr->check >> 8) & 0xFF;
-    buffer[15] = (hdr->check >> 16) & 0xFF;
-    buffer[16] = (hdr->check >> 24) & 0xFF;
+    hdr->version = buffer[5];
+    hdr->flag = buffer[6];
+    hdr->sectinos = buffer[7];
+    hdr->len = (uint32_t)buffer[8] | ((uint32_t)buffer[9]<<8) | ((uint32_t)buffer[10]<<16) |  ((uint32_t)buffer[11]<<24);
+    hdr->check = (uint32_t)buffer[12] | ((uint32_t)buffer[13]<<8) | ((uint32_t)buffer[14]<<16) |  ((uint32_t)buffer[15]<<24);
 }
 
 void load_hdr2buffer(load_head_st* hdr, uint8_t* buffer){
@@ -72,18 +67,25 @@ void load_hdr2buffer(load_head_st* hdr, uint8_t* buffer){
     buffer[2] = hdr->magic[2];
     buffer[3] = hdr->magic[3];
     buffer[4] = hdr->magic[4];
-    buffer[6] = hdr->version;
-    buffer[7] = hdr->flag;
-    buffer[8] = hdr->sectinos; 
-    hdr->len = (uint32_t)buffer[9] | ((uint32_t)buffer[10]<<8) | ((uint32_t)buffer[11]<<16) |  ((uint32_t)buffer[12]<<24);
-    hdr->check = (uint32_t)buffer[12] | ((uint32_t)buffer[13]<<8) | ((uint32_t)buffer[14]<<16) |  ((uint32_t)buffer[15]<<24);
-}
+    buffer[5] = hdr->version;
+    buffer[6] = hdr->flag;
+    buffer[7] = hdr->sectinos; 
+    buffer[8] = hdr->len & 0xFF;
+    buffer[9] = (hdr->len >> 8) & 0xFF;
+    buffer[10] = (hdr->len >> 16) & 0xFF;
+    buffer[11] = (hdr->len >> 24) & 0xFF;
+    buffer[12] = hdr->check & 0xFF;
+    buffer[13] = (hdr->check >> 8) & 0xFF;
+    buffer[14] = (hdr->check >> 16) & 0xFF;
+    buffer[15] = (hdr->check >> 24) & 0xFF;
+ }
 
 int load_one_section(load_section_info_st* section_info){
     uint8_t* p_dst;
     if(section_info->flag & LOAD_SECTION_FLAG_NEEDLOAD){
         /* 加载 */
         p_dst = (uint8_t*)(section_info->vma);
+        xprintf("load %x to %x len %d\r\n",section_info->lma,section_info->vma,section_info->len);
         if(section_info->len != s_load_mem_read(p_dst, section_info->lma, section_info->len)){
             return -1;
         }
@@ -138,6 +140,7 @@ int load_load_sections(void){
     for(int i=0; i<hdr.sectinos; i++){
         load_buffer2sectioninfo(p_info, &info);
         load_one_section(&info);
+        p_info += LOAD_SECTION_INFO_LEN;
     }
 
     return 0;
@@ -145,6 +148,7 @@ int load_load_sections(void){
 
 void load_boot(void){
     if(s_get_dtb_kernel_flag == 0x03){
+        xprintf("boot to dtb %x kernel %x\r\n",s_dtb_addr,s_kernel_addr);
         start_kernel(s_dtb_addr, s_kernel_addr);
     }
 }

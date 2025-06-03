@@ -22,6 +22,8 @@ static void printflashfunc(uint8_t* param);
 static void writeflashfunc(uint8_t* param);
 static void rxspiflashfunc(uint8_t* param);
 static void sxspiflashfunc(uint8_t* param);
+static void restorespiflashfunc(uint8_t* param);
+static void dumpspiflashfunc(uint8_t* param);
 
 static void bootfunc(uint8_t* param);
 
@@ -41,6 +43,8 @@ const shell_cmd_cfg g_shell_cmd_list_ast[ ] =
   { (uint8_t*)"writeflash",   writeflashfunc,   (uint8_t*)"writeflash addr[hex] hexstr"}, 
   { (uint8_t*)"rxspiflash",   rxspiflashfunc,   (uint8_t*)"rxspiflash addr[hex] len"}, 
   { (uint8_t*)"sxspiflash",   sxspiflashfunc,   (uint8_t*)"sxspiflash addr[hex] len"}, 
+  { (uint8_t*)"restorespiflash",restorespiflashfunc,(uint8_t*)"restorespiflash ramaddr[hex] flashaddr[hex] len"}, 
+  { (uint8_t*)"dumpspiflash",   dumpspiflashfunc,   (uint8_t*)"dumpspiflash flashaddr[hex] ramaddr[hex]  len"}, 
 
   { (uint8_t*)"boot",         bootfunc,         (uint8_t*)"boot dtbaddr[hex] kernel[hex]"}, 
 
@@ -686,6 +690,66 @@ static void sxspiflashfunc(uint8_t* param)
     xmodem_init_tx(&cfg);
     while((res = xmodem_tx()) == 0);
     xprintf("res:%d\r\n",res);
+  }
+}
+
+static void restorespiflashfunc(uint8_t* param)
+{
+  uint32_t flashaddr;
+  uint32_t ramaddr;
+  uint32_t len;
+  #if 0
+  if(3 == sscanf((const char*)param, "%*s %lx %lx %d", &ramaddr, &flashaddr &len))
+  #else
+  char* p =(char*)param;
+  while(1){  /* 跳过%*s部分 */
+    if((*p > 'z') || (*p < 'a')){
+      break;
+    }else{
+      p++;
+    }
+  }
+  long tmp;
+  xatoi(&p, &tmp);
+  ramaddr = tmp;
+  xatoi(&p, &tmp);
+  flashaddr = tmp;
+  xatoi(&p, &tmp);
+  len = tmp;
+  #endif
+  {
+    xprintf("restore %x to %x len %d\r\n",ramaddr,flashaddr,len);
+    flash_itf_write((uint8_t*)ramaddr,flashaddr,len);
+  }
+}
+
+static void dumpspiflashfunc(uint8_t* param)
+{
+  uint32_t flashaddr;
+  uint32_t ramaddr;
+  uint32_t len;
+  #if 0
+  if(3 == sscanf((const char*)param, "%*s %lx %lx %d", &flashaddr, &ramaddr &len))
+  #else
+  char* p =(char*)param;
+  while(1){  /* 跳过%*s部分 */
+    if((*p > 'z') || (*p < 'a')){
+      break;
+    }else{
+      p++;
+    }
+  }
+  long tmp;
+  xatoi(&p, &tmp);
+  flashaddr = tmp;
+  xatoi(&p, &tmp);
+  ramaddr = tmp;
+  xatoi(&p, &tmp);
+  len = tmp;
+  #endif
+  {
+    xprintf("dump %x to %x len %d\r\n",flashaddr,ramaddr,len);
+    flash_itf_read((uint8_t*)ramaddr,flashaddr,len);
   }
 }
 
