@@ -12,6 +12,7 @@
 #include "spiflash_itf.h"
 #include "shell.h"
 #include "shell_func.h"
+#include "load.h"
 
 #if defined(USE_IS42S16320F)
 	#define SDRAM_SIZE (64ul*1024ul*1024ul)
@@ -74,7 +75,7 @@ static int wait_key(uint32_t timeout){
 	}
 }
 
-static int user_user_main(void)
+static int user_main(void)
 {
 	volatile uint32_t *FLASH_KEYR = (void *)(FLASH_BASE + 0x04);
 	volatile uint32_t *FLASH_CR = (void *)(FLASH_BASE + 0x10);
@@ -230,7 +231,12 @@ static int user_user_main(void)
 	}
 	asm volatile ("cpsid i");
 	systick_deinit();  /* 关闭中断等,避免内核启动时初始化定时器时马上产生中断导致异常 */
-	start_kernel();
+
+	load_load_sections();
+	load_boot();  /* 此时如果有有效dtb和kernel加载则直接启动 */
+
+	/* 如果没有dtb和kernel加载则按照默认地址启动 */
+	start_kernel(DTB_ADDR, KERNEL_ADDR);
 
 	return 0;
 }
@@ -269,7 +275,7 @@ void reset(void)
 		*dst++ = 0;
 	}
 
-	user_user_main();
+	user_main();
 }
 
 

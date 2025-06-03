@@ -32,8 +32,8 @@ void *memset(void *str, int c, size_t n){
 }
 
 size_t strlen(const char *str){
-    char* ps = str;
-    char* pe = str;
+    const char* ps = str;
+    char* pe = (char*)str;
     while(*pe++);
     return pe - ps -1;
 }
