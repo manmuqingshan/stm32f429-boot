@@ -1,0 +1,27 @@
+{
+    "head": {
+        "version": 1,
+        "flag": 0,
+        "section":
+        [
+            {
+                "type": 0,
+                "subtype": 0,
+                "flag": 16,
+                "vma": "0x93000000",
+                "lma": "0x200",
+                "len": 19604,
+                "file": "../img/sdram_img/stm32f429-disco-sdram.dtb"
+            },
+            {
+                "type": 1,
+                "subtype": 0,
+                "flag": 16,
+                "vma": "0x93008000",
+                "lma": "0x8200",
+                "len": 1935164,
+                "file": "../img/sdram_img/xipImage-sdram.bin"
+            }
+        ]
+    }
+}
