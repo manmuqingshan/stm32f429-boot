@@ -59,7 +59,8 @@ void uart_init(int id, uint32_t baud)
 		volatile uint32_t *USART_CR3 = (uint32_t*)(reg_base[id-1] + 0x14);
 		uint32_t int_div, frac_div, val;
 
-		*USART_CR1 = USART_CR1_TE | USART_CR1_RE;
+		*USART_CR1 &= ~(USART_CR1_TE | USART_CR1_RE);
+
 		*USART_CR2 = 0;
 		*USART_CR3 = 0;
 
@@ -75,6 +76,8 @@ void uart_init(int id, uint32_t baud)
 
 		//NVIC_SetPriority(USART1_IRQn,2,0);
 		NVIC_EnableIRQ(USART1_IRQn);
+
+		*USART_CR1 |= (USART_CR1_TE | USART_CR1_RE);
 	}
 }
 
@@ -101,4 +104,9 @@ uint32_t uart_read(int id, uint8_t* buffer, uint32_t len)
     rlen = fifo_out(&(s_uart_fifo_dev[id-1]), buffer, len);
     ExitCritical();
     return rlen;
+}
+
+uint32_t uart_getrxlen(int id)
+{
+	return fifo_getlen(&(s_uart_fifo_dev[id-1]));
 }

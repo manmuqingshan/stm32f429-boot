@@ -9,6 +9,7 @@ extern "C" {
 
 
 typedef uint32_t (*xmodem_io_read_pf)(uint8_t* buffer, uint32_t len); /**< 通讯接收接口 */
+typedef uint32_t (*xmodem_io_getrxlen_pf)(void); /**< 通讯接口获取已经接收数据长度 */
 typedef uint32_t (*xmodem_io_write_pf)(uint8_t* buffer, uint32_t len);/**< 通讯发送接口 */
 typedef void (*xmodem_read_flush_pf)(void);   /**< 通讯接收flush接口 */
 typedef void (*xmodem_write_flush_pf)(void);  /**< 通讯发送flush接口 */
@@ -23,6 +24,7 @@ typedef uint32_t (*xmodem_getms_pf)(void);                              /**< 获
 typedef struct
 { 
     xmodem_io_read_pf io_read;             /**< 通讯接收接口 */
+    xmodem_io_getrxlen_pf io_getrxlen;     /**< 通讯接收接口，获取已经接收数据长度  */
     xmodem_io_read_pf io_write;            /**< 通讯发送接口 */
     xmodem_read_flush_pf io_read_flush;    /**< 通讯接收flush接口 */
     xmodem_write_flush_pf io_write_flush;  /**< 通讯发送flush接口 */

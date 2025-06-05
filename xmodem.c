@@ -244,8 +244,17 @@ int xmodem_rx(void)
         case XMODEM_STATE_RX_DATA_WAIT:
             buf = s_cfg_pst->buffer;
             len = s_cfg_pst->plen + 3 + ((s_cfg_pst->crccheck == 0) ? 1 : 2);
-            getlen = s_cfg_pst->io_read(buf+s_state_st.getlen, len - s_state_st.getlen);
-            s_state_st.getlen += getlen;
+            if(s_cfg_pst->io_getrxlen != 0){
+                if(s_cfg_pst->io_getrxlen() >= (len - s_state_st.getlen)){
+                    /* 这里改为先查询再获取,避免io_read频繁去操作fifo导致关中断时间过长 */
+                    getlen = s_cfg_pst->io_read(buf+s_state_st.getlen, len - s_state_st.getlen);
+                    s_state_st.getlen += getlen;
+                }
+            }else{
+                /* 没有提供函数io_getrxlen则直接读  */
+                getlen = s_cfg_pst->io_read(buf+s_state_st.getlen, len - s_state_st.getlen);
+                s_state_st.getlen += getlen; 
+            }
             if(s_state_st.getlen >= len)
             {
                 /* 接收完,准备判断合法性 */

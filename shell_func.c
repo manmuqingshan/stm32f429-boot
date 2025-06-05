@@ -26,6 +26,7 @@ static void restorespiflashfunc(uint8_t* param);
 static void dumpspiflashfunc(uint8_t* param);
 
 static void bootfunc(uint8_t* param);
+static void setbaudfunc(uint8_t* param);
 
 /**
  * 最后一行必须为0,用于结束判断
@@ -47,6 +48,7 @@ const shell_cmd_cfg g_shell_cmd_list_ast[ ] =
   { (uint8_t*)"dumpspiflash",   dumpspiflashfunc,   (uint8_t*)"dumpspiflash flashaddr[hex] ramaddr[hex]  len"}, 
 
   { (uint8_t*)"boot",         bootfunc,         (uint8_t*)"boot dtbaddr[hex] kernel[hex]"}, 
+  { (uint8_t*)"setbaud",      setbaudfunc,      (uint8_t*)"setbaud baud"}, 
 
   { (uint8_t*)0,		          0 ,               0},
 };
@@ -103,6 +105,11 @@ static uint32_t getms(void)
 static uint32_t io_read(uint8_t* buffer, uint32_t len)
 {
   return uart_read(1,buffer, len);
+}
+
+static uint32_t io_getrxlen(void)
+{
+  return uart_getrxlen(1);
 }
 
 static void io_read_flush(void)
@@ -418,9 +425,10 @@ static void rxmemfunc(uint8_t* param)
     xmodem_cfg_st cfg=
       {
         .buffer = rxtx_buf,
-        .crccheck = 1,
+        .crccheck = 0,
         .getms = getms,
         .io_read = io_read,
+        .io_getrxlen = io_getrxlen,
         .io_read_flush = io_read_flush,
         .io_write = io_write,
         .start_timeout = 60,
@@ -466,6 +474,7 @@ static void sxmemfunc(uint8_t* param)
       .plen = 1024,
       .getms = getms,
       .io_read = io_read,
+      .io_getrxlen = io_getrxlen,
       .io_read_flush = io_read_flush,
       .io_write = io_write,
       .start_timeout = 60,
@@ -631,9 +640,10 @@ static void rxspiflashfunc(uint8_t* param)
     xmodem_cfg_st cfg=
     {
       .buffer = rxtx_buf,
-      .crccheck = 1,
+      .crccheck = 0,
       .getms = getms,
       .io_read = io_read,
+      .io_getrxlen = io_getrxlen,
       .io_read_flush = io_read_flush,
       .io_write = io_write,
       .start_timeout = 60,
@@ -678,6 +688,7 @@ static void sxspiflashfunc(uint8_t* param)
       .plen = 1024,
       .getms = getms,
       .io_read = io_read,
+      .io_getrxlen = io_getrxlen,
       .io_read_flush = io_read_flush,
       .io_write = io_write,
       .start_timeout = 60,
@@ -776,6 +787,29 @@ static void bootfunc(uint8_t* param)
   #endif
   {
     start_kernel(dtbaddr, kerneladdr);
+  }
+}
+
+static void setbaudfunc(uint8_t* param)
+{
+  uint32_t baud;
+  #if 0
+  if(1 == sscanf((const char*)param, "%*s %d", &baud))
+  #else
+  char* p =(char*)param;
+  while(1){  /* 跳过%*s部分 */
+    if((*p > 'z') || (*p < 'a')){
+      break;
+    }else{
+      p++;
+    }
+  }
+  long tmp;
+  xatoi(&p, &tmp);
+  baud = tmp;
+  #endif
+  {
+    uart_init(1, baud);
   }
 }
 
