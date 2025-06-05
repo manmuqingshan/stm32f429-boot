@@ -4,7 +4,6 @@
 #include <errno.h>
 
 #include "load.h"
-#include "imgpack.h"
 #include "cJSON.h"
 
 

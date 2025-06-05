@@ -27,6 +27,7 @@ static void xprintf_out(int ch){
 	uart_send(1, &c, 1);
 }
 
+#if 0
 static void spiflash_test(void){
 	uint8_t buffer[16];
 	for(int i=0;i<sizeof(buffer);i++){
@@ -45,7 +46,7 @@ static void spiflash_test(void){
 	}
 	xprintf("spiflash test ok\r\n");
 }
-
+#endif
 
 static uint32_t shell_read(uint8_t *buff, uint32_t len)
 {
