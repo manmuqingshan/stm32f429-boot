@@ -221,3 +221,22 @@ void clock_setup(void)
   	/* https://my.st.com/public/STe2ecommunities/mcu/Lists/cortex_mx_stm32/Flat.aspx?RootFolder=%2Fpublic%2FSTe2ecommunities%2Fmcu%2FLists%2Fcortex_mx_stm32%2FPower%20consumption%20without%20low%20power&FolderCTID=0x01200200770978C69A1141439FE559EB459D7580009C4E14902C3CDE46A77F0FFD06506F5B&currentviews=469 */
 	*RCC_AHB1LPENR &= ~RCC_AHB1LPENR_OTGHSULPILPEN;
 }
+
+static uint32_t diff_u32(uint32_t pre, uint32_t now){
+	if(now >= pre){
+		return now-pre;
+	}else{
+		return 0xFFFFFFFF - pre + now + 1;
+	}
+}
+
+void clock_delay(int t){
+	uint32_t t0 = get_ticks();
+	volatile uint32_t t1;
+	while(1){
+		t1 = get_ticks();
+		if(diff_u32(t0,t1) >= t){
+			return;
+		}
+	}
+}

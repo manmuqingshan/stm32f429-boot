@@ -3,7 +3,7 @@
 #include "clock.h"
 #include "spi.h"
 
-static uint32_t reg_base[3]={0x40013000,0x40003800,0x40003C00};
+static uint32_t reg_base[6]={0x40013000,0x40003800,0x40003C00,0x40013400,0x40015000,0x40015400};
 
 void spi_init(int id, spi_cfg_st* cfg){
 	
@@ -13,18 +13,37 @@ void spi_init(int id, spi_cfg_st* cfg){
 	volatile uint32_t *RCC_APB2ENR = (void *)(RCC_BASE + 0x44);
 	volatile uint32_t *RCC_AHB1ENR = (void *)(RCC_BASE + 0x30);
 
-	/* 引脚时钟使能 引脚初始化 
-	 * PA4  SPI1_NSS  GPIO
-	 * PA5  SPI1_SCK  AF5
-	 * PA6  SPI1_MISO AF5 
-	 * PA7  SPI1_MOSI AF5
-	 */
-	*RCC_AHB1ENR |= (1u<<0); /* GPIOA */
-	gpio_set((void*)GPIOA_BASE, 'A', 4, 0, GPIOx_MODER_MODERy_GPOUTPUT,GPIOx_OSPEEDR_OSPEEDRy_HIGH, GPIOx_PUPDR_PULLUP);
-	gpio_write((void*)GPIOA_BASE, 'A', 4, 1);	
-	gpio_set_alt((void*)GPIOA_BASE, 'A', 5, 0, GPIOx_OSPEEDR_OSPEEDRy_HIGH, 0, 0x5);
-	gpio_set_alt((void*)GPIOA_BASE, 'A', 6, 0, GPIOx_OSPEEDR_OSPEEDRy_HIGH, 0, 0x5);
-	gpio_set_alt((void*)GPIOA_BASE, 'A', 7, 0, GPIOx_OSPEEDR_OSPEEDRy_HIGH, 0, 0x5);
+	switch(id){
+		case 1:
+			/* 引脚时钟使能 引脚初始化 
+			* PA4  SPI1_NSS  GPIO
+			* PA5  SPI1_SCK  AF5
+			* PA6  SPI1_MISO AF5 
+			* PA7  SPI1_MOSI AF5
+			*/
+			*RCC_AHB1ENR |= (1u<<0); /* GPIOA */
+			gpio_set((void*)GPIOA_BASE, 'A', 4, 0, GPIOx_MODER_MODERy_GPOUTPUT,GPIOx_OSPEEDR_OSPEEDRy_HIGH, GPIOx_PUPDR_PULLUP);
+			gpio_write((void*)GPIOA_BASE, 'A', 4, 1);	
+			gpio_set_alt((void*)GPIOA_BASE, 'A', 5, 0, GPIOx_OSPEEDR_OSPEEDRy_HIGH, 0, 0x5);
+			gpio_set_alt((void*)GPIOA_BASE, 'A', 6, 0, GPIOx_OSPEEDR_OSPEEDRy_HIGH, 0, 0x5);
+			gpio_set_alt((void*)GPIOA_BASE, 'A', 7, 0, GPIOx_OSPEEDR_OSPEEDRy_HIGH, 0, 0x5);
+		break;
+		case 5:
+			/**
+			 * PF7 SPI5_SCK   AF5
+			 * PF9 SPI5_MOSI  AF5
+			 * PC2 CS  GPIO
+			 * PD13 数据/命令 GPIO
+			 */
+			*RCC_AHB1ENR |= (1u<<5); /* GPIOF */
+			gpio_set_alt((void*)GPIOA_BASE, 'F', 7, 0, GPIOx_OSPEEDR_OSPEEDRy_HIGH, 0, 0x5);
+			gpio_set_alt((void*)GPIOA_BASE, 'F', 9, 0, GPIOx_OSPEEDR_OSPEEDRy_HIGH, 0, 0x5);
+
+			*RCC_AHB1ENR |= (1u<<2); /* GPIOC */
+			gpio_set((void*)GPIOA_BASE, 'C', 2, 0, GPIOx_MODER_MODERy_GPOUTPUT,GPIOx_OSPEEDR_OSPEEDRy_HIGH, GPIOx_PUPDR_PULLUP);
+			gpio_write((void*)GPIOA_BASE, 'C', 2, 1);
+		break;
+	}
 
 	/* SPI时钟初始化 */
 	if(id==1){
@@ -33,6 +52,8 @@ void spi_init(int id, spi_cfg_st* cfg){
 		*RCC_APB1ENR |= (1u<<14); /* SPI2 */
 	}else if(id == 3){
 		*RCC_APB1ENR |= (1u<<15); /* SPI3 */
+	}else if(id == 5){
+		*RCC_APB2ENR |= (1u<<20); /* SPI5 */
 	}
 	/* SPI配置 */
 	uint16_t tmp = 0;
@@ -46,7 +67,7 @@ void spi_init(int id, spi_cfg_st* cfg){
 		tmp |= (1u<<7);  /* 0: MSB transmitted first 1: LSB transmitted first */
 	}
 	tmp |= (1u<<6);  /* 1: Peripheral enabled */
-	if(id == 1){
+	if((id == 1) || (id == 5)){
 		div = clock_get_apb2() / cfg->baud;
 	}else{
 		div = clock_get_apb1() / cfg->baud;	
@@ -86,7 +107,14 @@ uint32_t spi_transfer(int id, uint8_t* tx, uint8_t* rx, uint32_t len, int flag)
     uint8_t rx_tmp;
 	uint8_t tx_tmp = 0xFF;
 	/* CS拉低 */
-	gpio_write((void*)GPIOA_BASE, 'A', 4, 0);	
+	switch(id){
+		case 1:
+		gpio_write((void*)GPIOA_BASE, 'A', 4, 0);
+		break;
+		case 5:
+		gpio_write((void*)GPIOA_BASE, 'C', 2, 0);
+		break;
+	}	
 	for(uint32_t i=0; i<len; i++){
 		if(tx != (uint8_t*)0){
             *dr = (uint16_t)tx[i];
@@ -102,7 +130,14 @@ uint32_t spi_transfer(int id, uint8_t* tx, uint8_t* rx, uint32_t len, int flag)
 
 	if(flag){
 		/* CS拉高 */
-		gpio_write((void*)GPIOA_BASE, 'A', 4, 1);	
+		switch(id){
+			case 1:
+			gpio_write((void*)GPIOA_BASE, 'A', 4, 1);
+			break;
+			case 5:
+			gpio_write((void*)GPIOA_BASE, 'C', 2, 1);
+			break;
+		}	
 	}
     return len;
 }

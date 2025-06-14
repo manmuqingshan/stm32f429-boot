@@ -12,5 +12,6 @@ uint32_t clock_get_apb2(void);
 uint32_t clock_get_ahb(void);
 
 void clock_setup(void);
+void clock_delay(int t);
 
 #endif 

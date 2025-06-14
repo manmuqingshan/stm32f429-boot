@@ -13,6 +13,7 @@
 #include "shell.h"
 #include "shell_func.h"
 #include "load.h"
+#include "lcd_test.h"
 
 #if defined(USE_IS42S16320F)
 	#define SDRAM_SIZE (64ul*1024ul*1024ul)
@@ -224,6 +225,8 @@ static int user_main(void)
 	flash_itf_init();
 	//spiflash_test();
 	
+	lcd_test();
+
 	if(wait_key(3)){
 		shell_set_itf(shell_read, shell_write, (shell_cmd_cfg*)g_shell_cmd_list_ast, 1);
 		while(1){
