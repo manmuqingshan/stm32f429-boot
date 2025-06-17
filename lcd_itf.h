@@ -98,6 +98,8 @@ void lcd_itf_set_pixel_direct(uint16_t x, uint16_t y, uint16_t rgb565);
 
 void lcd_itf_fill(uint16_t x, uint16_t w, uint16_t y, uint16_t h, uint16_t rgb);
 
+void lcd_itf_swap(void);
+
 #ifdef __cplusplus
     }
 #endif

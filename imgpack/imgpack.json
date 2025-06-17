@@ -21,6 +21,15 @@
                 "lma": "0x8200",
                 "len": 1935164,
                 "file": "../img/sdram_img/xipImage-sdram.bin"
+            },
+            {
+                "type": 3,
+                "subtype": 0,
+                "flag": 16,
+                "vma": "0x93F00000",
+                "lma": "0x1E1000",
+                "len": 153600,
+                "file": "../logo/linux.dta"
             }
         ]
     }

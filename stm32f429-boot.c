@@ -14,6 +14,8 @@
 #include "shell_func.h"
 #include "load.h"
 #include "lcd_test.h"
+#include "lcd_itf.h"
+
 #include "spi.h"
 
 #if defined(USE_IS42S16320F)
@@ -76,6 +78,12 @@ static int wait_key(uint32_t timeout){
 			return 0;
 		}
 	}
+}
+
+static volatile int s_logo_sync_done = 0;  /* 必须加volatile 否则后面的while()判断永远不会满足 */
+void logo_sync_dnoe(void* param){
+    xprintf("logo sync done\r\n");
+    s_logo_sync_done = 1;
 }
 
 static int user_main(void)
@@ -226,7 +234,8 @@ static int user_main(void)
 	flash_itf_init();
 	//spiflash_test();
 	
-	lcd_test();
+    lcd_itf_init();
+	//lcd_test();
 
 	if(wait_key(3)){
 		shell_set_itf(shell_read, shell_write, (shell_cmd_cfg*)g_shell_cmd_list_ast, 1);
@@ -234,12 +243,20 @@ static int user_main(void)
 			shell_exec();
 		}
 	}
-	asm volatile ("cpsid i");
-	systick_deinit();  /* 关闭中断等,避免内核启动时初始化定时器时马上产生中断导致异常 */
 
 	/* SPIFLASH boot */
 	load_mem_itf_set(flash_itf_write,flash_itf_read);
 	load_load_sections();
+
+	lcd_itf_set_cb(logo_sync_dnoe);
+	lcd_itf_swap();
+    lcd_itf_sync_dma();
+	while(s_logo_sync_done == 0);
+    clock_delay(100);
+
+	asm volatile ("cpsid i");
+	systick_deinit();  /* 关闭中断等,避免内核启动时初始化定时器时马上产生中断导致异常 */
+
 	load_boot();  /* 此时如果有有效dtb和kernel加载则直接启动 */
 
 	/* @todo 其他boot */

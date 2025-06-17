@@ -209,6 +209,19 @@ int lcd_itf_sync_dma(void)
 }
 
 
+void lcd_itf_swap(void)
+{
+	uint8_t* p;
+	uint8_t tmp;
+	p = (uint8_t*)(s_lcd_itf_dev.buffer);
+	for(int i=0;i<LCD_HSIZE*LCD_VSIZE;i++){
+		tmp = p[2*i+1];
+		p[2*i+1] = p[2*i];
+		p[2*i] = tmp;
+	}
+}
+
+
 /**
  * \fn lcd_itf_set_pixel
  * 写点
