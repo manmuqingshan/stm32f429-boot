@@ -12,5 +12,7 @@ typedef struct{
 
 void spi_init(int id, spi_cfg_st* cfg);
 uint32_t spi_transfer(int id, uint8_t* tx, uint8_t* rx, uint32_t len, int flag);
+uint32_t spi_transfer_dma(int id, uint8_t* tx, uint8_t* rx, uint32_t len, int flag,void (*cb)(void* param), void* param);
+void dma2_stream4_irqhandler(void);
 
 #endif 

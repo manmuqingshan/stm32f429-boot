@@ -14,6 +14,7 @@
 #include "shell_func.h"
 #include "load.h"
 #include "lcd_test.h"
+#include "spi.h"
 
 #if defined(USE_IS42S16320F)
 	#define SDRAM_SIZE (64ul*1024ul*1024ul)
@@ -370,7 +371,7 @@ __attribute__((used)) static void (*vector_table[16 + 91])(void) = {
 	noop,
 	noop,
 	noop,
-	noop,
+	dma2_stream4_irqhandler,
 	noop,
 	noop,
 	noop,

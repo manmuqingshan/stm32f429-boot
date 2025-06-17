@@ -6,6 +6,9 @@
 #endif
 
 #include <stdint.h>
+#include "ili9341v.h"
+#define LCD_HSIZE ILI9341V_HSIZE
+#define LCD_VSIZE ILI9341V_VSIZE
 
 /**
  * \fn lcd_itf_init
@@ -30,6 +33,21 @@ int lcd_itf_deinit(void);
  * \retval 其他值 失败
 */
 int lcd_itf_sync(void);
+
+
+/**
+ * \fn lcd_itf_set_cb
+ * 设置回调函数
+*/
+void lcd_itf_set_cb(void (*cb)(void* param));
+
+/**
+ * \fn lcd_itf_sync_dma
+ * 刷新显示 dma方式
+ * \retval 0 成功
+ * \retval 其他值 失败
+*/
+int lcd_itf_sync_dma(void);
 
 /**
  * \fn lcd_itf_set_pixel
@@ -77,6 +95,8 @@ void lcd_itf_fill_direct(uint16_t x, uint16_t w, uint16_t y, uint16_t h, uint16_
  * \param[in] rgb565 颜色
 */
 void lcd_itf_set_pixel_direct(uint16_t x, uint16_t y, uint16_t rgb565);
+
+void lcd_itf_fill(uint16_t x, uint16_t w, uint16_t y, uint16_t h, uint16_t rgb);
 
 #ifdef __cplusplus
     }

@@ -14,7 +14,8 @@
 
 typedef void    (*ili9341v_set_dcx_pf)(uint8_t val);                          /**< DCX引脚操作接口,val=1为数据和参数, val=0为命令   */
 typedef void    (*ili9341v_set_reset_pf)(uint8_t val);                        /**< 复位引脚操作,val=1输出高,val=0输出低            */
-typedef void    (*ili9341v_spi_write_pf)(uint8_t* buffer, uint32_t len);      /**< MOSI写接口接口,buffer为待写数据,len为待写长度    */
+typedef void    (*ili9341v_spi_write_pf)(uint8_t* buffer, uint32_t len, int flag);      /**< MOSI写接口接口,buffer为待写数据,len为待写长度    */
+typedef void    (*ili9341v_spi_writedma_pf)(uint8_t* buffer, uint32_t len,void (*cb)(void* param));      /**< MOSI写接口接口,buffer为待写数据,len为待写长度    */
 typedef void    (*ili9341v_spi_enable_pf)(uint8_t val);                       /**< 使能接口                                       */
 typedef void    (*ili9341v_spi_delay_ms_pf)(uint32_t t);                      /**< 延时接口                                       */
 typedef void    (*ili9341v_init_pf)(void);                                    /**< 初始化接口                                     */
@@ -44,6 +45,7 @@ typedef void    (*ili9341v_deinit_pf)(void);                                  /*
 #define ILI9341V_CMD_NVGAMCTRL 0xE1
 #define ILI9341V_CMD_ITF_CTL   0xF6
 
+
 /**
  * \struct ili9341v_dev_st
  * 设备接口结构体
@@ -53,17 +55,19 @@ typedef struct
     ili9341v_set_dcx_pf    set_dcx;      /**< DCX写接口        */
     ili9341v_set_reset_pf  set_reset;    /**< RESET写接口      */
     ili9341v_spi_write_pf  write;        /**< 数据写接口       */
+    ili9341v_spi_writedma_pf  write_dma;    /**< 数据写dma接口       */
     ili9341v_spi_enable_pf enable;       /**< 使能接口         */
     ili9341v_spi_delay_ms_pf delay;      /**< 延时接口         */
     ili9341v_init_pf       init;         /**< 初始化接口       */
     ili9341v_deinit_pf     deinit;       /**< 解除初始化接口   */
-
+    void (*cb)(void* param) ;            /**< 回调函数        */
     uint16_t*            buffer;       /**< 显存,用户分配    */        
 } ili9341v_dev_st;
 
+
 /**
  * \fn ili9341v_sync
- * 现存写入ili9341v
+ * 显存写入ili9341v
  * \param[in] dev \ref ili9341v_dev_st
  * \paran[in] x0 列开始地址
  * \paran[in] x1 列结束地址
@@ -75,6 +79,21 @@ typedef struct
  * \retval 其他值 失败
 */
 int ili9341v_sync(ili9341v_dev_st* dev, uint16_t x0, uint16_t x1, uint16_t y0, uint16_t y1, uint16_t* buffer, uint32_t len);
+
+/**
+ * \fn ili9341v_sync_dma
+ * 显存写入ili9341v dma方式
+ * \param[in] dev \ref ili9341v_dev_st
+ * \paran[in] x0 列开始地址
+ * \paran[in] x1 列结束地址
+ * \paran[in] y0 行开始地址
+ * \paran[in] y1 行结束地址 
+ * \paran[in] buffer 待写入数据 
+ * \paran[in] len 待写入数据长度 
+ * \retval 0 成功
+ * \retval 其他值 失败
+*/
+int ili9341v_sync_dma(ili9341v_dev_st* dev, uint16_t x0, uint16_t x1, uint16_t y0, uint16_t y1, uint16_t* buffer, uint32_t len);
 
 /**
  * \fn ili9341v_init

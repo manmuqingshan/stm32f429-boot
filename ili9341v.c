@@ -16,7 +16,7 @@ typedef struct
 static ili9341v_cmd_st s_ili9341v_cmd_init_list[]=
 {
     {ILI9341V_CMD_SLPOUT,{0   },0,120},  /**< SLPOUT (11h): Sleep Out */
-    {ILI9341V_CMD_MADCTL,{0x08   },1,0},    /**< MADCTL (36h): Memory Data Access Control */
+    {ILI9341V_CMD_MADCTL,{0x08   },1,0},    /**< MADCTL (36h): Memory Data Access Control  0x68 xy调换 */
     {ILI9341V_CMD_COLMOD,{0x55},1,0},    /**< 16bit/pixel 65K         */
     //{ILI9341V_CMD_PORCTRL,{0x0C,0x0C,0x00,0x33,0x33},5,0},  /**< 默认值 */
     //{ILI9341V_CMD_GCTRL,{0x35},1,0},                        /**< 默认值 */
@@ -48,7 +48,7 @@ static ili9341v_cmd_st s_ili9341v_cmd_init_list[]=
  * \retval 0 成功
  * \retval 其他值 失败
 */
-static int ili9341v_write_cmd(ili9341v_dev_st* dev,uint8_t cmd)
+static int ili9341v_write_cmd(ili9341v_dev_st* dev,uint8_t cmd, int flag)
 {
     uint8_t tmp;
 #if ILI9341V_CHECK_PARAM
@@ -68,7 +68,7 @@ static int ili9341v_write_cmd(ili9341v_dev_st* dev,uint8_t cmd)
     tmp = cmd;
     dev->enable(1);
     dev->set_dcx(0);
-    dev->write(&tmp,1);
+    dev->write(&tmp,1,flag);
     dev->enable(0);
     return 0;
 }
@@ -82,7 +82,7 @@ static int ili9341v_write_cmd(ili9341v_dev_st* dev,uint8_t cmd)
  * \retval 0 成功
  * \retval 其他值 失败
 */
-static int ili9341v_write_data(ili9341v_dev_st* dev,uint8_t* data, uint32_t len)
+static int ili9341v_write_data(ili9341v_dev_st* dev,uint8_t* data, uint32_t len, int flag)
 {
 #if ILI9341V_CHECK_PARAM
     if(dev == (ili9341v_dev_st*)0)
@@ -100,8 +100,40 @@ static int ili9341v_write_data(ili9341v_dev_st* dev,uint8_t* data, uint32_t len)
 #endif
     dev->enable(1);
     dev->set_dcx(1);
-    dev->write(data,len);
+    dev->write(data,len, flag);
     dev->enable(0);
+    return 0;
+}
+
+/**
+ * \fn ili9341v_write_data_dma
+ * 写数据 dma方式
+ * \param[in] dev \ref ili9341v_dev_st
+ * \param[in] data 待写入数据
+ * \param[in] len 待写入数据长度
+ * \retval 0 成功
+ * \retval 其他值 失败
+*/
+static int ili9341v_write_data_dma(ili9341v_dev_st* dev,uint8_t* data, uint32_t len)
+{
+#if ILI9341V_CHECK_PARAM
+    if(dev == (ili9341v_dev_st*)0)
+    {
+        return -1;
+    }
+    if(dev->set_dcx == (ili9341v_set_dcx_pf)0)
+    {
+        return -1;
+    }
+    if(dev->write_dma == (ili9341v_spi_writedma_pf)0)
+    {
+        return -1;
+    }
+#endif
+    dev->enable(1);
+    dev->set_dcx(1);
+    dev->write_dma(data,len,dev->cb);
+    //dev->enable(0);  /* 完成中断中才能关闭 */
     return 0;
 }
 
@@ -117,19 +149,19 @@ static int ili9341v_write_data(ili9341v_dev_st* dev,uint8_t* data, uint32_t len)
 static int ili9341v_set_windows(ili9341v_dev_st* dev, uint16_t x0, uint16_t x1, uint16_t y0, uint16_t y1)
 {
     uint8_t data[4];
-    ili9341v_write_cmd(dev, ILI9341V_CMD_CASET);
+    ili9341v_write_cmd(dev, ILI9341V_CMD_CASET,0);
     data[0] = (x0>>8) & 0xFF;  /* 列开始地址 大端 */
     data[1] = x0 & 0xFF;
     data[2] = (x1>>8) & 0xFF;  /* 列结束地址 大端 */
     data[3] = x1 & 0xFF;
-    ili9341v_write_data(dev, data, 4);
+    ili9341v_write_data(dev, data, 4,1);
 
-    ili9341v_write_cmd(dev, ILI9341V_CMD_RASET);
+    ili9341v_write_cmd(dev, ILI9341V_CMD_RASET,0);
     data[0] = (y0>>8) & 0xFF;  /* 行开始地址 大端 */
     data[1] = y0 & 0xFF;
     data[2] = (y1>>8) & 0xFF;  /* 行结束地址 大端 */
     data[3] = y1 & 0xFF;
-    ili9341v_write_data(dev, data, 4);
+    ili9341v_write_data(dev, data, 4,1);
 
     return 0;
 }
@@ -151,8 +183,30 @@ int ili9341v_sync(ili9341v_dev_st* dev, uint16_t x0, uint16_t x1, uint16_t y0, u
 {
     (void)dev;
     ili9341v_set_windows(dev, x0, x1, y0, y1);
-    ili9341v_write_cmd(dev,ILI9341V_CMD_RAMWR);
-    ili9341v_write_data(dev, (uint8_t*)buffer, len);
+    ili9341v_write_cmd(dev,ILI9341V_CMD_RAMWR,0);
+    ili9341v_write_data(dev, (uint8_t*)buffer, len,1);
+    return 0;
+}
+
+/**
+ * \fn ili9341v_sync_dma
+ * 显存写入ili9341v
+ * \param[in] dev \ref ili9341v_dev_st
+ * \paran[in] x0 列开始地址
+ * \paran[in] x1 列结束地址
+ * \paran[in] y0 行开始地址
+ * \paran[in] y1 行结束地址 
+ * \paran[in] buffer 待写入数据 
+ * \paran[in] len 待写入数据长度 
+ * \retval 0 成功
+ * \retval 其他值 失败
+*/
+int ili9341v_sync_dma(ili9341v_dev_st* dev, uint16_t x0, uint16_t x1, uint16_t y0, uint16_t y1, uint16_t* buffer, uint32_t len)
+{
+    (void)dev;
+    ili9341v_set_windows(dev, x0, x1, y0, y1);
+    ili9341v_write_cmd(dev,ILI9341V_CMD_RAMWR,0);
+    ili9341v_write_data_dma(dev, (uint8_t*)buffer, len);
     return 0;
 }
 
@@ -188,23 +242,29 @@ int ili9341v_init(ili9341v_dev_st* dev)
     /* 初始化序列 */
     for(uint32_t i=0; i<sizeof(s_ili9341v_cmd_init_list)/sizeof(s_ili9341v_cmd_init_list[0]); i++)
     {
-        ili9341v_write_cmd(dev, s_ili9341v_cmd_init_list[i].cmd);
+        if(s_ili9341v_cmd_init_list[i].datalen > 0){
+            ili9341v_write_cmd(dev, s_ili9341v_cmd_init_list[i].cmd,0);
+        }else{
+            ili9341v_write_cmd(dev, s_ili9341v_cmd_init_list[i].cmd,1);  
+        }
         if(s_ili9341v_cmd_init_list[i].datalen > 0)
         {
-            ili9341v_write_data(dev, s_ili9341v_cmd_init_list[i].data,s_ili9341v_cmd_init_list[i].datalen);
+            ili9341v_write_data(dev, s_ili9341v_cmd_init_list[i].data,s_ili9341v_cmd_init_list[i].datalen,1);
             if(s_ili9341v_cmd_init_list[i].delay > 0)
             {
                 dev->delay(s_ili9341v_cmd_init_list[i].delay);
             }
         }
     }
-
+#if 0
 		uint16_t tmp = 0x00;
-		ili9341v_set_windows(dev, 0, 240-1, 0, 320-1);
-    ili9341v_write_cmd(dev,ILI9341V_CMD_RAMWR);
-		for(int i=0; i<240*320; i++){
-			ili9341v_write_data(dev, (uint8_t*)(&tmp), 2);
+		ili9341v_set_windows(dev, 0, ILI9341V_HSIZE-1, 0, ILI9341V_VSIZE-1);
+    ili9341v_write_cmd(dev,ILI9341V_CMD_RAMWR,0);
+		for(int i=0; i<ILI9341V_HSIZE*ILI9341V_VSIZE-1; i++){
+			ili9341v_write_data(dev, (uint8_t*)(&tmp), 2,0);
 		}
+        ili9341v_write_data(dev, (uint8_t*)(&tmp), 2,1);
+#endif
     return 0;
 }
 

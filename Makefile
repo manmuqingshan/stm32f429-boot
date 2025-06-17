@@ -17,7 +17,7 @@ CFLAGS := -mthumb -mcpu=cortex-m4 -fno-builtin --specs=nano.specs
 CFLAGS += -ffunction-sections -fdata-sections  -nostdlib
 CFLAGS += -Os -std=gnu99 -Wall -nostartfiles -g  -Imemtester_mcu/memtester/inc -ICMSIS/ -I./ 
 LINKERFLAGS :=  --gc-sections
-obj-y += ili9341v.o lcd_itf.o lcd_test.o load.o string.o stm32f429-boot.o xmodem.o shell.o shell_func.o uart.o fifo.o clock.o spi.o gpio.o start_kernel.o sdram.o xprintf.o spiflash.o spiflash_itf.o memtester_mcu/memtester/src/memtester.o memtester_mcu/memtester/src/memtester_tests.o 
+obj-y += dma.o ili9341v.o lcd_itf.o lcd_test.o load.o string.o stm32f429-boot.o xmodem.o shell.o shell_func.o uart.o fifo.o clock.o spi.o gpio.o start_kernel.o sdram.o xprintf.o spiflash.o spiflash_itf.o memtester_mcu/memtester/src/memtester.o memtester_mcu/memtester/src/memtester_tests.o 
 
 all: stm32f429-boot
 

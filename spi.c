@@ -1,9 +1,20 @@
-#include "stm32f4_regs.h"
+#include "stm32f429xx.h"
+//#include "stm32f4_regs.h"
 #include "gpio.h"
 #include "clock.h"
 #include "spi.h"
+#include "dma.h"
+#include "xprintf.h"
+
 
 static uint32_t reg_base[6]={0x40013000,0x40003800,0x40003C00,0x40013400,0x40015000,0x40015400};
+
+/**
+ * SPI5_TX可走 CH2 STREAM4 或者
+ *             CH7 STREAM6 */
+#define SPI5_TX_DMA DMA2_BASE
+#define SPI5_TX_DMA_CH 2
+#define SPI5_TX_DMA_STREAM 4
 
 void spi_init(int id, spi_cfg_st* cfg){
 	
@@ -142,4 +153,91 @@ uint32_t spi_transfer(int id, uint8_t* tx, uint8_t* rx, uint32_t len, int flag)
     return len;
 }
 
+static  dma_st s_dma_cfg={
 
+};
+
+void (*spi5_tx_dma_cb)(void* param) = 0;
+void *spi5_tx_dma_param = 0;
+
+uint32_t spi_transfer_dma(int id, uint8_t* tx, uint8_t* rx, uint32_t len, int flag,void (*cb)(void* param), void* param)
+{
+	/* CS拉低 */
+	switch(id){
+		case 1:
+		gpio_write((void*)GPIOA_BASE, 'A', 4, 0);
+		break;
+		case 5:
+		gpio_write((void*)GPIOA_BASE, 'C', 2, 0);
+		break;
+	}	
+
+	/* 准备DMA */
+	switch(id)
+	{
+		case 5:
+			{
+			spi5_tx_dma_cb = cb;
+			spi5_tx_dma_param = param;
+
+			s_dma_cfg.cnt = len;
+			s_dma_cfg.m0addr = (uint32_t)tx;
+			s_dma_cfg.m1addr = (uint32_t)tx;
+			s_dma_cfg.paddr = reg_base[id-1] + 0x0C;  /* SPI_DR */
+			s_dma_cfg.fifo_cfg.dmdis = 1;  /* 使用FIFO  源和目的数据宽度不一样时必须使用FIFO */
+			s_dma_cfg.fifo_cfg.fth = DMA_FIFO_FTH_1_2;
+			s_dma_cfg.fifo_cfg.feie = 0;
+			s_dma_cfg.cfg.chsel = SPI5_TX_DMA_CH;
+			s_dma_cfg.cfg.circ = 0;
+			s_dma_cfg.cfg.ct = 0;
+			s_dma_cfg.cfg.dbm = 0;
+			s_dma_cfg.cfg.dir = DMA_DIR_M2P;
+			s_dma_cfg.cfg.dmeie = 0;
+			s_dma_cfg.cfg.htie = 0;
+			s_dma_cfg.cfg.mburst = DMA_MBURST_SINGLE;
+			s_dma_cfg.cfg.minc = DMA_MINC_MSIZE;
+			s_dma_cfg.cfg.msize = DMA_MSIZE_BYTE;
+			s_dma_cfg.cfg.pburst = DMA_PBURST_SINGLE;
+			s_dma_cfg.cfg.pfctrl = DMA_PFCTRL_DMA;
+			s_dma_cfg.cfg.pinc = DMA_PINC_FIXED;
+			s_dma_cfg.cfg.pincos = DMA_PINCOS_PSIZE;
+			s_dma_cfg.cfg.pl = DMA_PL_VERYHIGH;
+			s_dma_cfg.cfg.psize = DMA_PSIZE_BYTE;
+			s_dma_cfg.cfg.tcie = 1;
+			s_dma_cfg.cfg.teie = 0;
+
+			dma_cfg(SPI5_TX_DMA, SPI5_TX_DMA_STREAM, &s_dma_cfg);
+			dma_int_flag_clr(SPI5_TX_DMA, SPI5_TX_DMA_STREAM, DMA_INT_TC);
+			//NVIC_SetPriority(DMA2_Stream4_IRQn,2,0);
+			NVIC_EnableIRQ(DMA2_Stream4_IRQn);
+
+			volatile uint16_t* cr2 = (uint16_t*)(reg_base[id-1] + 0x04);
+			*cr2 |= 0x02; /* TXDMAEN */
+			}
+		break;
+	}
+
+	if(flag){
+		/* CS拉高 */
+		switch(id){
+			case 1:
+			gpio_write((void*)GPIOA_BASE, 'A', 4, 1);
+			break;
+			case 5:
+			gpio_write((void*)GPIOA_BASE, 'C', 2, 1);
+			break;
+		}	
+	}
+    return len;
+}
+
+void dma2_stream4_irqhandler(void){
+	//xprintf("dma2_stream4_irqhandler\r\n");
+	if(dma_int_is_set(SPI5_TX_DMA, SPI5_TX_DMA_STREAM, DMA_INT_TC)){
+		//xprintf("tc\r\n");
+		dma_int_flag_clr(SPI5_TX_DMA, SPI5_TX_DMA_STREAM, DMA_INT_TC);
+		if(spi5_tx_dma_cb != 0){
+			spi5_tx_dma_cb(spi5_tx_dma_param);
+		}
+	}
+}
