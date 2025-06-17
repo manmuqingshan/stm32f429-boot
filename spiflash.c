@@ -151,17 +151,34 @@ uint32_t flash_write(flash_dev_st* dev, uint8_t* buffer, uint32_t addr, uint32_t
 	start_addr = addr & (~(dev->sector_size-1));
 	end_addr = (addr+len) & (~(dev->sector_size-1));
 	sec_head = addr & (dev->sector_size-1);   
-	if((end_addr != start_addr) || (sec_head == 0)){
 		sec_tail = (addr + len) & (dev->sector_size-1); 
+	if(sec_head == 0){
+		if(sec_tail == 0){
+			/* head和tail都是0,即都是对齐的 */
+			sec_mid_num = (end_addr - start_addr) >> dev->sector_bits;
+		}else{
+			/* head对齐，tail不对齐 */
+			sec_mid_num = (end_addr - start_addr) >> dev->sector_bits;
 	}
-	sec_mid_num = (end_addr - start_addr) >> dev->sector_bits;
-	if((sec_head != 0) || (sec_tail != 0)){
-		if(sec_mid_num > 1){
+	}else{
+		if(sec_tail == 0){
+			/* head不对齐，tail对齐 */
+			sec_mid_num = (end_addr - start_addr) >> dev->sector_bits;
 			sec_mid_num--;
 		}else{
-			sec_mid_num = 0;
+			/* head不对齐，tail不对齐 */
+	sec_mid_num = (end_addr - start_addr) >> dev->sector_bits;
+			if(sec_mid_num > 0){
+			sec_mid_num--;
+		}else{
+				/* head tail可能位于同一个sector 且都不对齐
+				 * 此时其实不需要head和tail都进行读出-修改-写入，可以特殊处理，只需要一次读出-修改-写入
+				 * 不特殊处理也没关系,只是会多读出-修改-写入一次
+				 */
+			}
 		}
 	}
+
 	/* head */
 	if(sec_head > 0)
     {
